@@ -87,4 +87,12 @@ public class OrderController {
         orderService.cancelOrder(id);
         return Result.success();
     }
+
+    @PostMapping("/repetition/{id}")
+    @ApiOperation("再来一单")
+    public Result repeatOrder(@PathVariable Long id) {
+        log.info("要再来一单的订单id：{}", id);
+        orderService.repeatOrder(id);
+        return Result.success();
+    }
 }

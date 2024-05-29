@@ -180,7 +180,7 @@ public class OrderServiceImpl implements OrderService {
         if (ordersList != null && ordersList.getTotal() > 0) {
             for (Orders orders : ordersList) {
                 OrderVO orderVO = new OrderVO();
-                List<OrderDetail> orderDetailList = orderDetailMapper.getById(orders.getId()); //这里是通过订单id查询
+                List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(orders.getId()); //这里是通过订单id查询
                 BeanUtils.copyProperties(orders, orderVO);
                 orderVO.setOrderDetailList(orderDetailList);
                 list.add(orderVO);
@@ -195,7 +195,7 @@ public class OrderServiceImpl implements OrderService {
         OrderVO orderVO = new OrderVO();
         Orders order = orderMapper.getById(id);
 
-        List<OrderDetail> list = orderDetailMapper.getById(id);
+        List<OrderDetail> list = orderDetailMapper.getByOrderId(id);
         BeanUtils.copyProperties(order, orderVO);
         orderVO.setOrderDetailList(list);
 
@@ -225,5 +225,25 @@ public class OrderServiceImpl implements OrderService {
         order.setCancelReason("用户取消");
         order.setCancelTime(LocalDateTime.now());
         orderMapper.update(order);
+    }
+
+    @Override
+    public void repeatOrder(Long id) {
+        //将原订单的商品重新加入到购物车中
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+        if (orderDetailList == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        Long userId = BaseContext.getCurrentId();
+        List<ShoppingCart> shoppingCartList = new ArrayList<>();
+
+        for (OrderDetail orderDetail : orderDetailList) {
+            ShoppingCart shoppingCart = new ShoppingCart();
+            BeanUtils.copyProperties(orderDetail, shoppingCart);
+            shoppingCart.setUserId(userId);
+            shoppingCartList.add(shoppingCart);
+        }
+
+        shoppingCartMapper.insertBatch(shoppingCartList);
     }
 }
