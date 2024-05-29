@@ -201,4 +201,29 @@ public class OrderServiceImpl implements OrderService {
 
         return orderVO;
     }
+
+    @Override
+    public void cancelOrder(Long id) {
+        Orders order = orderMapper.getById(id);
+        //订单不存在就返回错误信息
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        //订单状态 1待付款 2待接单 3已接单 4派送中 5已完成 6已取消
+        Integer status = order.getStatus();
+        if (status > 4) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        if (status.equals(Orders.CONFIRMED) || status.equals(Orders.DELIVERY_IN_PROGRESS)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_PHONE);
+        }
+        if (status.equals(Orders.TO_BE_CONFIRMED)) {
+            order.setPayStatus(Orders.REFUND);
+        }
+        // 更新订单状态、取消原因、取消时间
+        order.setStatus(Orders.CANCELLED);
+        order.setCancelReason("用户取消");
+        order.setCancelTime(LocalDateTime.now());
+        orderMapper.update(order);
+    }
 }
